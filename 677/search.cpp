@@ -46,14 +46,14 @@ int main(int argc, char *argv[]) {
              * there is at least one false variable. */
             for(ssize_t i = 0; i < n; i++) {
                 for(ssize_t j = i + 1; j < n; j++) {
-                    clauses.push_back({-var1(x, y, i), -var1(x, y, j)});
+                    clauses.push_back({-var1(y, x, i), -var1(y, x, j)});
                 }
             }
 
             /** There is at least one true $X_{yx, i}$. */
             std::vector<ssize_t> clause;
             clause.reserve(n);
-            for(ssize_t i = 0; i < n; i++) { clause.push_back(var1(x, y, i)); }
+            for(ssize_t i = 0; i < n; i++) { clause.push_back(var1(y, x, i)); }
             clauses.push_back(std::move(clause));
         }
     }
@@ -82,12 +82,21 @@ int main(int argc, char *argv[]) {
         }
     }
 
-    /** Equation 677 implies that the left inverse exists. */
+    /**
+     * Equation 677 implies that for any $x$ and $y$,
+     * there is some $z$ which $x = yz$.
+     * Also, such $z$ is unique. */
     for(ssize_t x = 0; x < n; x++) {
         for(ssize_t y = 0; y < n; y++) {
+            for(ssize_t i = 0; i < n; i++) {
+                for(ssize_t j = i + 1; j < n; j++) {
+                    clauses.push_back({-var1(y, i, x), -var1(y, j, x)});
+                }
+            }
+
             std::vector<ssize_t> clause;
             clause.reserve(n);
-            for(ssize_t i = 0; i < n; i++) { clause.push_back(var1(x, y, i)); }
+            for(ssize_t i = 0; i < n; i++) { clause.push_back(var1(y, i, x)); }
             clauses.push_back(std::move(clause));
         }
     }

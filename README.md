@@ -1,6 +1,6 @@
 # DIMACS CNF generator for Magmas
 
-Unlike the title, this repository currently contains two files `677-255/basic.cpp` and `README.md`.
+Unlike the title, this repository currently contains two files `677/search.cpp` and `README.md`.
 
 There will be updates for improvements or new experiments.
 
@@ -27,6 +27,8 @@ If you'd like to suggest a new experiment or give improvements in code, please m
 
 ## Files
 
-### `677-255`
+### [`677`](./677)
 
-* Generates `.cnf` which can be satisfied if and only if there is some magma with `N` elements which satisfies [equation 677](https://teorth.github.io/equational_theories/implications/?677&finite) but not [equation 255](https://teorth.github.io/equational_theories/implications/?255&finite).
+#### [search.cpp](./677/search.cpp)
+
+* Generates a `.cnf` file which can be satisfied if and only if there is some magma with `N` elements which satisfies [equation 677](https://teorth.github.io/equational_theories/implications/?677&finite).

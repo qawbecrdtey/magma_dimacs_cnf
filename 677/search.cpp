@@ -154,6 +154,29 @@ int main(int argc, char *argv[]) {
         }
     }
 
+    /** Equation 677 implies that, for each $x$, there is at most one $y$ which $x = yx$. */
+    for(ssize_t x = 0; x < n; x++) {
+        for(ssize_t a = 0; a < n; a++) {
+            for(ssize_t b = a + 1; b < n; b++) {
+                clauses.push_back({-var1(a, x, x), -var1(b, x, x)});
+            }
+        }
+    }
+
+    /**
+     * Equation 677 implies that $y = (xy)(yx)$ if $xy = y*x$,
+     * where $z = x*y$ is equivalent to $zx = y$. */
+    for(ssize_t x = 0; x < n; x++) {
+        for(ssize_t y = 0; y < n; y++) {
+            for(ssize_t a = 0; a < n; a++) {
+                for(ssize_t b = 0; b < n; b++) {
+                    clauses.push_back(
+                      {-var1(x, y, a), -var1(x, a, y), -var1(y, x, b), var1(a, b, y)});
+                }
+            }
+        }
+    }
+
     /** Condition for 677 magma end */
 
     // DIMACS CNF Generation start

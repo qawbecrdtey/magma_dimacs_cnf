@@ -1,7 +1,5 @@
 # DIMACS CNF generator for Magmas
 
-Unlike the title, this repository currently contains two files `677/search.cpp` and `README.md`.
-
 There will be updates for improvements or new experiments.
 
 ## How to use the generator

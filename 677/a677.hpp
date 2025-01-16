@@ -13,7 +13,7 @@ namespace magma {
      * @param var `var(x, y, i)` is $X_{xy, i}$.
      * @param n The number of elements in the magma.
      */
-    void a677(
+    inline void a677(
       std::vector<std::vector<ssize>> &clauses,
       std::function<ssize(ssize, ssize, ssize)> const &var,
       ssize const n) {

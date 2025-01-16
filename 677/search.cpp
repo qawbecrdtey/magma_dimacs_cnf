@@ -1,3 +1,5 @@
+#include "../tools.hpp"
+
 #include "a677.hpp"
 
 #include <iostream>
@@ -62,9 +64,17 @@ int main(int argc, char *argv[]) {
 
     /** Condition for variables end */
 
+    /** All elements of the magma satisfy equation 677. */
     a677(clauses, var1, n);
 
     // DIMACS CNF Generation start
+    remove_duplicates(clauses);
+
+    // Faster I/O
+    std::ios_base::sync_with_stdio(false);
+    std::cin.tie(nullptr);
+    std::cout.tie(nullptr);
+
     std::cout << "p cnf " << variables_count << ' ' << clauses.size() << '\n';
     for(auto const &clause: clauses) {
         for(auto const lit: clause) { std::cout << lit << ' '; }

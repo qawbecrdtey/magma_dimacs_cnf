@@ -1,6 +1,6 @@
 #include "../tools.hpp"
 
-#include "../255/na255.hpp"
+#include "../2504/a2504.hpp"
 #include "a677.hpp"
 
 #include <iostream>
@@ -38,12 +38,10 @@ int main(int argc, char *argv[]) {
     auto const var1 = [n](ssize const x, ssize const y, ssize const i) noexcept {
         return 1 + (x * n + y) * n + i;
     };
-    /** `var2(x)` is $Y_{x} = \forall a b, X_{xx, a} \to X_{ax, b} \lor X_{bx, x}$. */
-    auto const var2 = [n](ssize const x) noexcept { return 1 + n * n * n + x; };
-    /** `var3(i)` is $Z_{x} = X_{0 \cdot x, x} \lor \ldots \lor X_{(n - 1) \cdot x, x}$. */
-    auto const var3 = [n](ssize const i) noexcept { return 1 + n * n * n + n + i; };
 
-    auto const variables_count = n * n * n + 2 * n;
+    auto const variables_count = n * n * n;
+
+    /** Condition for variables */
 
     /** For every $x$ and $y$, exactly one of $X_{yx, i}$ for $0 \leq i < N$ is true. */
     for(ssize x = 0; x < n; x++) {
@@ -70,35 +68,8 @@ int main(int argc, char *argv[]) {
     /** All elements of the magma satisfy equation 677. */
     a677(clauses, var1, n);
 
-    /** Not all elements of the magma satisfy equation 255. */
-    na255(clauses, var1, var2, n);
-
-    /** Additional conditions */
-
-    /**
-     * Equation 677 implies, for given $x$, there exists some $y$ which $yx = x$
-     * if and only if equation 255 for $x$ holds.
-     * To refute equation 255 under equation 677, we may give additional constraints that,
-     * there is some $x$ which for all $y$, $yx \neq x$. */
-    for(ssize x = 0; x < n; x++) {
-        std::vector<ssize> clause;
-        clause.reserve(n + 1);
-        clause.push_back(-var3(x));
-        for(ssize i = 0; i < n; i++) {
-            clauses.push_back({-var1(i, x, x), var3(i)});
-            clause.push_back(var1(i, x, x));
-        }
-        clauses.push_back(std::move(clause));
-    }
-
-    {
-        std::vector<ssize> clause;
-        clause.reserve(n);
-        for(ssize x = 0; x < n; x++) { clause.push_back(-var3(x)); }
-        clauses.push_back(std::move(clause));
-    }
-
-    /** Additional conditions end*/
+    /** All elements of the magma satisfy equation 2504. */
+    a2504(clauses, var1, n);
 
     // DIMACS CNF Generation start
     remove_duplicates(clauses);

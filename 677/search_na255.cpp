@@ -8,7 +8,8 @@
 
 /**
  * This program generates a DIMACS CNF format which is satisfiable iff
- * there is a magma of order `N` satisfying the equation 677.
+ * there is a magma of order `N` satisfying the equation 677,
+ * but equation 255 is not satisfied in all cases.
  *
  * Number of variables: `O(N^3)`
  * Number of clauses: `O(N^5)`

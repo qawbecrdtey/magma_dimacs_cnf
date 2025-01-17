@@ -120,13 +120,28 @@ namespace magma {
 
         /**
          * Equation 677 implies that $y = (xy)(yx)$ if $xy = y*x$,
-         * where $z = x*y$ is equivalent to $zx = y$. */
+         * where $z = x*y$ is equivalent to $x = yz$. */
         for(ssize x = 0; x < n; x++) {
             for(ssize y = 0; y < n; y++) {
                 for(ssize a = 0; a < n; a++) {
                     for(ssize b = 0; b < n; b++) {
                         clauses.push_back(
                           {-var(x, y, a), -var(x, a, y), -var(y, x, b), var(a, b, y)});
+                    }
+                }
+            }
+        }
+
+        /**
+         * Equation 677 implies that, for given $x$, there exists some $z$ which $zx = z*x$
+         * if there exists some $y$ which $yx = x$,
+         * where $z = x*y$ is equivalent to $zx = y$. */
+        for(ssize x = 0; x < n; x++) {
+            for(ssize y = 0; y < n; y++) {
+                for(ssize z = 0; z < n; z++) {
+                    for(ssize a = 0; a < n; a++) {
+                        clauses.push_back({-var(y, x, x), -var(z, x, a), var(x, a, z)});
+                        clauses.push_back({-var(y, x, x), -var(x, a, z), var(z, x, a)});
                     }
                 }
             }

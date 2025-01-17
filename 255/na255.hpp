@@ -39,6 +39,15 @@ namespace magma {
             for(ssize x = 0; x < n; x++) { clause.push_back(-var2(x)); }
             clauses.push_back(std::move(clause));
         }
+
+        /** Symmetry breaking - USE WITH CAUTION */
+
+        /**
+         * If equation 255 is false, then there should be at least one $x$ with $xx \neq x$.
+         * Let such $x$ be 0. */
+        { clauses.push_back({-var1(0, 0, 0)}); }
+
+        /** Symmetry breaking end */
     }
 }  // namespace magma
 

@@ -99,7 +99,10 @@ int main(int argc, char *argv[]) {
 
     /**
      * From symmetry breaking conditions of `na255`, we also know that $0 \cdot 1 \neq 0$. */
-    { clauses.push_back({-var1(0, 1, 0)}); }
+    {
+        clauses.push_back({-var1(0, 1, 0)});
+        clauses.push_back({var1(1, 0, 0), -var1(0, 2, 0)});
+    }
 
     /** Additional conditions end */
 

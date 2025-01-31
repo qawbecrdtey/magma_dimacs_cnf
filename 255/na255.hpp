@@ -24,11 +24,12 @@ namespace magma {
          * If equation 255 is false, then there should be at least one $x$ with $xx \neq x$.
          * Let such $x$ be 0, and set $0 \cdot 0 = 1$.
          * If $1 \cdot 0 \neq 0$, then we may let $1 \cdot 0 = 2$.
-         * It follows that $2 \cdot 0$ is one of $1$, $2$, or $3$, where $3$ is arbitrarily chosen. */
+         * It follows that $2 \cdot 0$ is one of $1$, $2$, or $3$, where $3$ is arbitrarily chosen.
+         */
         if(4 <= n) {
             clauses.push_back({var(0, 0, 1)});
             clauses.push_back({var(1, 0, 0), var(1, 0, 2)});
-            clauses.push_back({var(1, 0, 0), var(2, 0, 1), var(2, 0, 2), var(1, 0, 3)});
+            clauses.push_back({var(1, 0, 0), var(2, 0, 1), var(2, 0, 2), var(2, 0, 3)});
         }
 
         /** Symmetry breaking end */

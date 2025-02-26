@@ -4,10 +4,32 @@ There will be updates for improvements or new experiments.
 
 ## How to use the generator
 
+### Naive compilation
+
 To obtain the `.cnf` file in most linux environment,
 
 ```sh
 $ g++ --std=c++14 path/to/code.cpp -o generator
+$ ./generator N > path/to/dimacs.cnf
+```
+
+Replace `N` with any number not smaller than 5.
+
+Using the file `path/to/dimacs.cnf`, pass it to any solver like [CaDiCaL](https://github.com/arminbiere/cadical)
+or [Kissat](https://github.com/arminbiere/kissat).
+
+```sh
+$ ./cadical path/to/dimacs.cnf
+```
+
+### Using CMake
+
+To obtain the `.cnf` file in most linux environment with CMake version >= 3.10,
+
+```sh
+$ mkdir build && cd build
+$ cmake ..
+$ make
 $ ./generator N > path/to/dimacs.cnf
 ```
 

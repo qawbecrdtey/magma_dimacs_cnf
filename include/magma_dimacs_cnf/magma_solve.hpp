@@ -31,29 +31,29 @@ namespace magma_dimacs_cnf {
     create_cnf_base(input_flags const *const flags_, std::vector<std::vector<std::int32_t>> &cnf_) {
         ASSERT_AND_ASSUME(cnf_.empty());
 
-        auto const N = flags_->element_count;
-        CREATE_VAR(N);
+        auto const n = flags_->element_count;
+        CREATE_VAR(n);
 
-        for(std::int32_t i = 0; i < N; i++) {
-            for(std::int32_t j = 0; j < N; j++) {
-                for(std::int32_t k = 0; k < N - 1; k++) {
-                    for(std::int32_t l = k + 1; l < N; l++) {
+        for(std::int32_t i = 0; i < n; i++) {
+            for(std::int32_t j = 0; j < n; j++) {
+                for(std::int32_t k = 0; k < n - 1; k++) {
+                    for(std::int32_t l = k + 1; l < n; l++) {
                         cnf_.emplace_back(std::initializer_list {-var(i, j, k), -var(i, j, l)});
                     }
                 }
                 std::vector<std::int32_t> cl;
-                cl.reserve(N);
-                for(std::int32_t k = 0; k < N; k++) { cl.emplace_back(var(i, j, k)); }
+                cl.reserve(n);
+                for(std::int32_t k = 0; k < n; k++) { cl.emplace_back(var(i, j, k)); }
                 cnf_.emplace_back(std::move(cl));
             }
         }
 
         // For any $x$ and $y$, $x=y(x((yx)y))$ holds.
-        for(std::int32_t i = 0; i < N; i++) {  // x
-            for(std::int32_t j = 0; j < N; j++) {  // y
-                for(std::int32_t k = 0; k < N; k++) {  // yx
-                    for(std::int32_t l = 0; l < N; l++) {  // (yx)y
-                        for(std::int32_t m = 0; m < N; m++) {  // x((yx)y)
+        for(std::int32_t i = 0; i < n; i++) {  // x
+            for(std::int32_t j = 0; j < n; j++) {  // y
+                for(std::int32_t k = 0; k < n; k++) {  // yx
+                    for(std::int32_t l = 0; l < n; l++) {  // (yx)y
+                        for(std::int32_t m = 0; m < n; m++) {  // x((yx)y)
                             cnf_.emplace_back(
                               std::initializer_list {
                                 -var(j, i, k), -var(k, j, l), -var(i, l, m), var(j, m, i)});
@@ -64,11 +64,11 @@ namespace magma_dimacs_cnf {
         }
 
         // For any $x=yz$, $z=x((yx)y)$ holds.
-        for(std::int32_t i = 0; i < N; i++) {  // x
-            for(std::int32_t j = 0; j < N; j++) {  // y
-                for(std::int32_t k = 0; k < N; k++) {  // z
-                    for(std::int32_t l = 0; l < N; l++) {  // yx
-                        for(std::int32_t m = 0; m < N; m++) {  // (yx)y
+        for(std::int32_t i = 0; i < n; i++) {  // x
+            for(std::int32_t j = 0; j < n; j++) {  // y
+                for(std::int32_t k = 0; k < n; k++) {  // z
+                    for(std::int32_t l = 0; l < n; l++) {  // yx
+                        for(std::int32_t m = 0; m < n; m++) {  // (yx)y
                             cnf_.emplace_back(
                               std::initializer_list {
                                 -var(j, k, i), -var(j, i, l), -var(l, j, m), var(i, m, k)});
@@ -79,11 +79,11 @@ namespace magma_dimacs_cnf {
         }
 
         // For any $x$ and $y$, if $x=yz$ and $z=xw$, then $w=(yx)y$ holds.
-        for(std::int32_t i = 0; i < N; i++) {  // x
-            for(std::int32_t j = 0; j < N; j++) {  // y
-                for(std::int32_t k = 0; k < N; k++) {  // z
-                    for(std::int32_t l = 0; l < N; l++) {  // w
-                        for(std::int32_t m = 0; m < N; m++) {  // yx
+        for(std::int32_t i = 0; i < n; i++) {  // x
+            for(std::int32_t j = 0; j < n; j++) {  // y
+                for(std::int32_t k = 0; k < n; k++) {  // z
+                    for(std::int32_t l = 0; l < n; l++) {  // w
+                        for(std::int32_t m = 0; m < n; m++) {  // yx
                             cnf_.emplace_back(
                               std::initializer_list {
                                 -var(j, k, i), -var(i, l, k), -var(j, i, m), var(m, j, l)});
@@ -94,25 +94,25 @@ namespace magma_dimacs_cnf {
         }
 
         // For fixed $x$ and $z$, $xy=z$ has a unique solution for $y$.
-        for(std::int32_t i = 0; i < N; i++) {
-            for(std::int32_t k = 0; k < N; k++) {
-                for(std::int32_t j = 0; j < N - 1; j++) {
-                    for(std::int32_t l = j + 1; l < N; l++) {
+        for(std::int32_t i = 0; i < n; i++) {
+            for(std::int32_t k = 0; k < n; k++) {
+                for(std::int32_t j = 0; j < n - 1; j++) {
+                    for(std::int32_t l = j + 1; l < n; l++) {
                         cnf_.emplace_back(std::initializer_list {-var(i, j, k), -var(i, l, k)});
                     }
                 }
 
                 std::vector<std::int32_t> cl;
-                cl.reserve(N);
-                for(std::int32_t j = 0; j < N; j++) { cl.emplace_back(var(i, j, k)); }
+                cl.reserve(n);
+                for(std::int32_t j = 0; j < n; j++) { cl.emplace_back(var(i, j, k)); }
                 cnf_.emplace_back(std::move(cl));
             }
         }
 
         // For any $x = yx$, it holds that $y=(xx)x$.
-        for(std::int32_t i = 0; i < N; i++) {  // x
-            for(std::int32_t j = 0; j < N; j++) {  // y
-                for(std::int32_t k = 0; k < N; k++) {  // xx
+        for(std::int32_t i = 0; i < n; i++) {  // x
+            for(std::int32_t j = 0; j < n; j++) {  // y
+                for(std::int32_t k = 0; k < n; k++) {  // xx
                     cnf_.emplace_back(
                       std::initializer_list {-var(j, i, i), -var(i, i, k), var(k, i, j)});
                 }
@@ -120,10 +120,10 @@ namespace magma_dimacs_cnf {
         }
 
         // For any $x$, $(xx)x=(x((xx)x))(xx)$ holds.
-        for(std::int32_t i = 0; i < N; i++) {  // x
-            for(std::int32_t j = 0; j < N; j++) {  // xx
-                for(std::int32_t k = 0; k < N; k++) {  //(xx)x
-                    for(std::int32_t l = 0; l < N; l++) {  // x((xx)x)
+        for(std::int32_t i = 0; i < n; i++) {  // x
+            for(std::int32_t j = 0; j < n; j++) {  // xx
+                for(std::int32_t k = 0; k < n; k++) {  //(xx)x
+                    for(std::int32_t l = 0; l < n; l++) {  // x((xx)x)
                         cnf_.emplace_back(
                           std::initializer_list {
                             -var(i, i, j), -var(j, i, k), -var(i, k, l), var(l, j, k)});
@@ -133,10 +133,10 @@ namespace magma_dimacs_cnf {
         }
 
         // For any $x$, if $x=xy$, then $(xx)x=y(xx)$ holds.
-        for(std::int32_t i = 0; i < N; i++) {  // x
-            for(std::int32_t j = 0; j < N; j++) {  // xx
-                for(std::int32_t k = 0; k < N; k++) {  //(xx)x
-                    for(std::int32_t l = 0; l < N; l++) {  // y
+        for(std::int32_t i = 0; i < n; i++) {  // x
+            for(std::int32_t j = 0; j < n; j++) {  // xx
+                for(std::int32_t k = 0; k < n; k++) {  //(xx)x
+                    for(std::int32_t l = 0; l < n; l++) {  // y
                         cnf_.emplace_back(
                           std::initializer_list {
                             -var(i, i, j), -var(j, i, k), -var(i, l, i), var(l, j, k)});
@@ -146,18 +146,18 @@ namespace magma_dimacs_cnf {
         }
 
         // For any $x$, if $x=xy$ and $x\neq xx$, then $x\neq yx$.
-        for(std::int32_t i = 0; i < N; i++) {  // x
-            for(std::int32_t j = 0; j < N; j++) {  // xx
+        for(std::int32_t i = 0; i < n; i++) {  // x
+            for(std::int32_t j = 0; j < n; j++) {  // xx
                 if(i == j) { continue; }
-                for(std::int32_t k = 0; k < N; k++) {  // y
+                for(std::int32_t k = 0; k < n; k++) {  // y
                     cnf_.emplace_back(
                       std::initializer_list {-var(i, i, j), -var(i, k, i), -var(k, i, i)});
                 }
             }
         }
 
-        for(std::int32_t i = 0; i < N; i++) {  // x
-            for(std::int32_t j = 0; j < N; j++) {  // xx
+        for(std::int32_t i = 0; i < n; i++) {  // x
+            for(std::int32_t j = 0; j < n; j++) {  // xx
                 // In this scope, we add `-var(i, i, j)` to represent that $x\neq xx$.
                 if(i == j) { continue; }
                 // For any $x$ which $x\neq xx$, $x\neq (xx)x$ holds.
@@ -171,7 +171,7 @@ namespace magma_dimacs_cnf {
                 // For any $x$ which $x\neq xx$, $xx\neq x(xx)$ holds.
                 cnf_.emplace_back(std::initializer_list {-var(i, i, j), -var(i, j, j)});
 
-                for(std::int32_t k = 0; k < N; k++) {  // (xx)x
+                for(std::int32_t k = 0; k < n; k++) {  // (xx)x
                     // For any $x$ which $x\neq xx$, $x\neq x((xx)x)$ holds.
                     cnf_.emplace_back(
                       std::initializer_list {-var(i, i, j), -var(j, i, k), -var(i, k, i)});
@@ -189,7 +189,7 @@ namespace magma_dimacs_cnf {
                       std::initializer_list {-var(i, i, j), -var(j, i, k), -var(j, k, k)});
                 }
 
-                for(std::int32_t k = 0; k < N; k++) {  // x(xx)
+                for(std::int32_t k = 0; k < n; k++) {  // x(xx)
                     // For any $x$ which $x\neq xx$, $x\neq x(x(xx))$ holds.
                     cnf_.emplace_back(
                       std::initializer_list {-var(i, i, j), -var(i, j, k), -var(i, k, i)});

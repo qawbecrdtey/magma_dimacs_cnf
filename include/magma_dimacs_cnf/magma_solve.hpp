@@ -78,6 +78,22 @@ namespace magma_dimacs_cnf {
             }
         }
 
+        // For any $x$ and $y$, if $x=yz$ and $z=xw$, then $w=(yx)y$ holds.
+        for(std::int32_t i = 0; i < N; i++) {  // x
+            for(std::int32_t j = 0; j < N; j++) {  // y
+                for(std::int32_t k = 0; k < N; k++) {  // z
+                    for(std::int32_t l = 0; l < N; l++) {  // w
+                        for(std::int32_t m = 0; m < N; m++) {  // yx
+                            cnf_.emplace_back(
+                              std::initializer_list {
+                                -var(j, k, i), -var(i, l, k), -var(j, i, m), var(m, j, l)});
+                        }
+                    }
+                }
+            }
+        }
+
+        // For fixed $x$ and $z$, $xy=z$ has a unique solution for $y$.
         for(std::int32_t i = 0; i < N; i++) {
             for(std::int32_t k = 0; k < N; k++) {
                 for(std::int32_t j = 0; j < N - 1; j++) {
@@ -112,6 +128,30 @@ namespace magma_dimacs_cnf {
                           std::initializer_list {
                             -var(i, i, j), -var(j, i, k), -var(i, k, l), var(l, j, k)});
                     }
+                }
+            }
+        }
+
+        // For any $x$, if $x=xy$, then $(xx)x=y(xx)$ holds.
+        for(std::int32_t i = 0; i < N; i++) {  // x
+            for(std::int32_t j = 0; j < N; j++) {  // xx
+                for(std::int32_t k = 0; k < N; k++) {  //(xx)x
+                    for(std::int32_t l = 0; l < N; l++) {  // y
+                        cnf_.emplace_back(
+                          std::initializer_list {
+                            -var(i, i, j), -var(j, i, k), -var(i, l, i), var(l, j, k)});
+                    }
+                }
+            }
+        }
+
+        // For any $x$, if $x=xy$ and $x\neq xx$, then $x\neq yx$.
+        for(std::int32_t i = 0; i < N; i++) {  // x
+            for(std::int32_t j = 0; j < N; j++) {  // xx
+                if(i == j) { continue; }
+                for(std::int32_t k = 0; k < N; k++) {  // y
+                    cnf_.emplace_back(
+                      std::initializer_list {-var(i, i, j), -var(i, k, i), -var(k, i, i)});
                 }
             }
         }
@@ -168,9 +208,9 @@ namespace magma_dimacs_cnf {
       input_flags const *const flags_,
       std::vector<std::int32_t> const &v_,
       std::vector<std::vector<std::int32_t>> &cnf_) {
-        auto const N = flags_->element_count;
-        ASSERT_AND_ASSUME(sum(v_) == N);
-        CREATE_VAR(N);
+        auto const n = flags_->element_count;
+        ASSERT_AND_ASSUME(sum(v_) == n);
+        CREATE_VAR(n);
 
         std::int32_t begin = 0;
         // Consider the first row, which is of the form $0x=y$.
@@ -182,21 +222,6 @@ namespace magma_dimacs_cnf {
                 cnf_.emplace_back(std::initializer_list {var(0, i, (i - begin + 1) % l + begin)});
             }
             begin = end;
-        }
-    }
-
-    static constexpr void add_cnf(
-      input_flags const *const flags_,
-      CaDiCaL::Solver &solver_,
-      std::vector<std::vector<std::int32_t>> const &cnf_) {
-        auto const n = flags_->element_count;
-        std::remove_cvref_t<decltype(cnf_.size())> idx = 1 + n * n * n;
-        for(auto const &v: cnf_) {
-            solver_.assume(idx);
-            solver_.add(-idx);
-            for(auto const l: v) { solver_.add(l); }
-            solver_.add(0);
-            idx++;
         }
     }
 
@@ -313,9 +338,18 @@ namespace magma_dimacs_cnf {
         std::print(stderr, "{} start\n", v_);
 
         CaDiCaL::Solver solver;
-        add_cnf(flags_, solver, cnf_);
 
-        switch(solver.solve()) {
+        auto const n = flags_->element_count;
+        auto idx = 1 + n * n * n;
+        for(auto const &v: cnf_) {
+            // solver_.assume(idx);
+            solver.add(-idx);
+            for(auto const l: v) { solver.add(l); }
+            solver.add(0);
+            idx++;
+        }
+
+        switch(solver.simplify()) {
         case 10: {  // SAT
             save_result_sat(flags_, solver, v_);
         } break;
@@ -323,7 +357,24 @@ namespace magma_dimacs_cnf {
             save_result_unsat(flags_, solver, v_, cnf_);
         } break;
         default: {  // UNKNOWN
-            save_result_unknown(flags_, v_);
+            idx = 1 + n * n * n;
+            for([[maybe_unused]]
+                auto const &v: cnf_) {
+                solver.assume(idx);
+                idx++;
+            }
+
+            switch(solver.solve()) {
+            case 10: {  // SAT
+                save_result_sat(flags_, solver, v_);
+            } break;
+            case 20: {  // UNSAT
+                save_result_unsat(flags_, solver, v_, cnf_);
+            } break;
+            default: {  // UNKNOWN
+                save_result_unknown(flags_, v_);
+            } break;
+            }
         } break;
         }
     }

@@ -109,7 +109,7 @@ namespace magma_dimacs_cnf {
             }
         }
 
-        // For any $x = yx$, it holds that $y = (xx)x$.
+        // For any $x = yx$, it holds that $y=(xx)x$.
         for(std::int32_t i = 0; i < N; i++) {  // x
             for(std::int32_t j = 0; j < N; j++) {  // y
                 for(std::int32_t k = 0; k < N; k++) {  // xx
@@ -225,6 +225,53 @@ namespace magma_dimacs_cnf {
         }
     }
 
+    // Row `lhs_` is lexicographically less than row `rhs_`.
+    [[maybe_unused]]
+    static constexpr void create_cnf_lex_less(
+      [[maybe_unused]] input_flags const *const flags_,
+      [[maybe_unused]] std::vector<std::vector<std::int32_t>> &cnf_,
+      [[maybe_unused]] std::int32_t const lhs_,
+      [[maybe_unused]] std::int32_t const rhs_,
+      [[maybe_unused]] std::int32_t &next_) {
+        auto const n = flags_->element_count;
+        ASSERT_AND_ASSUME(0 <= lhs_);
+        ASSERT_AND_ASSUME(lhs_ < n);
+        ASSERT_AND_ASSUME(0 <= rhs_);
+        ASSERT_AND_ASSUME(rhs_ < n);
+    }
+
+    // The map $x\mapsto L_x$ is injective.
+    static constexpr void create_cnf_no_equal_rows(
+      input_flags const *const flags_,
+      std::vector<std::vector<std::int32_t>> &cnf_,
+      std::int32_t &next_) {
+        auto const n = flags_->element_count;
+        CREATE_VAR(n);
+
+        for(std::int32_t i = 0; i < n - 1; i++) {  // x
+            for(std::int32_t j = i + 1; j < n; j++) {  // y
+                std::int32_t const begin = next_;
+
+                // There exists some $z$ which $xz\neq yz$.
+                for(std::int32_t k = 0; k < n; k++) {
+                    for(std::int32_t l = 0; l < n; l++) {
+                        cnf_.emplace_back(
+                          std::initializer_list {next_, -var(i, k, l), -var(j, k, l)});
+                        cnf_.emplace_back(
+                          std::initializer_list {-next_, -var(i, k, l), var(j, k, l)});
+                        cnf_.emplace_back(
+                          std::initializer_list {-next_, var(i, k, l), -var(j, k, l)});
+                    }
+                    next_++;
+                }
+                std::vector<std::int32_t> cl;
+                cl.reserve(n);
+                for(std::int32_t k = 0; k < n; k++) { cl.emplace_back(-begin - k); }
+                cnf_.emplace_back(std::move(cl));
+            }
+        }
+    }
+
     static constexpr void create_name(std::vector<std::int32_t> const &v_, std::string &name_) {
         ASSERT_AND_ASSUME(name_.empty());
 
@@ -304,7 +351,8 @@ namespace magma_dimacs_cnf {
       input_flags const *const flags_,
       CaDiCaL::Solver &solver_,
       std::vector<std::int32_t> const &v_,
-      std::vector<std::vector<std::int32_t>> const &cnf_) {
+      std::vector<std::vector<std::int32_t>> const &cnf_,
+      std::int32_t const selector_base_) {
         ASSERT_AND_ASSUME(!v_.empty());
 
         std::string name;
@@ -319,9 +367,8 @@ namespace magma_dimacs_cnf {
         print_cycles(ofs, v_);
         std::print(ofs, "\nUNSAT");
 
-        auto const n = flags_->element_count;
         for(std::remove_cvref_t<decltype(cnf_.size())> i = 0; i < cnf_.size(); i++) {
-            if(solver_.failed(1 + i + n * n * n)) {
+            if(solver_.failed(static_cast<std::int32_t>(selector_base_ + i))) {
                 std::print(ofs, "\n{}:", i);
                 ASSERT_AND_ASSUME(i < cnf_.size());
                 for(auto const l: cnf_[i]) { std::print(ofs, " {}", l); }
@@ -334,13 +381,13 @@ namespace magma_dimacs_cnf {
     static constexpr void solve(
       input_flags const *const flags_,
       std::vector<std::int32_t> const &v_,
-      std::vector<std::vector<std::int32_t>> const &cnf_) {
+      std::vector<std::vector<std::int32_t>> const &cnf_,
+      std::int32_t const next_) {
         std::print(stderr, "{} start\n", v_);
 
         CaDiCaL::Solver solver;
 
-        auto const n = flags_->element_count;
-        auto idx = 1 + n * n * n;
+        auto idx = next_;
         for(auto const &v: cnf_) {
             // solver_.assume(idx);
             solver.add(-idx);
@@ -354,10 +401,10 @@ namespace magma_dimacs_cnf {
             save_result_sat(flags_, solver, v_);
         } break;
         case 20: {  // UNSAT
-            save_result_unsat(flags_, solver, v_, cnf_);
+            save_result_unsat(flags_, solver, v_, cnf_, next_);
         } break;
         default: {  // UNKNOWN
-            idx = 1 + n * n * n;
+            idx = next_;
             for([[maybe_unused]]
                 auto const &v: cnf_) {
                 solver.assume(idx);
@@ -369,7 +416,7 @@ namespace magma_dimacs_cnf {
                 save_result_sat(flags_, solver, v_);
             } break;
             case 20: {  // UNSAT
-                save_result_unsat(flags_, solver, v_, cnf_);
+                save_result_unsat(flags_, solver, v_, cnf_, next_);
             } break;
             default: {  // UNKNOWN
                 save_result_unknown(flags_, v_);
@@ -408,7 +455,10 @@ namespace magma_dimacs_cnf {
         create_cnf_base(flags_, cnf);
         create_cnf_first_line_constraint(flags_, v_, cnf);
 
-        solve(flags_, v_, cnf);
+        std::int32_t next = 1 + N * N * N;
+        create_cnf_no_equal_rows(flags_, cnf, next);
+
+        solve(flags_, v_, cnf, next);
     }
 
     static constexpr void magma_solve(input_flags const &flags_) {
@@ -426,14 +476,17 @@ namespace magma_dimacs_cnf {
             });
         }
 
-        post(io_context, [flags = &flags_, i = flags_.element_count] {
-            std::vector<std::int32_t> const v {std::initializer_list {i}};
+        post(io_context, [flags = &flags_, n = flags_.element_count] {
+            std::vector<std::int32_t> const v {std::initializer_list {n}};
 
             std::vector<std::vector<std::int32_t>> cnf;
             create_cnf_base(flags, cnf);
             create_cnf_first_line_constraint(flags, v, cnf);
 
-            solve(flags, v, cnf);
+            std::int32_t next = 1 + n * n * n;
+            create_cnf_no_equal_rows(flags, cnf, next);
+
+            solve(flags, v, cnf, next);
         });
 
         std::vector<std::thread> threads;

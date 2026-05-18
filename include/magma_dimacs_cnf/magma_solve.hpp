@@ -2,8 +2,9 @@
 #define MAGMA_DIMACS_CNF_MAGMA_SOLVE_HPP
 
 #include <magma_dimacs_cnf/assert_and_assume.hpp>
-#include <magma_dimacs_cnf/create_var.hpp>
 #include <magma_dimacs_cnf/input_flags.hpp>
+#include <magma_dimacs_cnf/create_cnf.hpp>
+#include <magma_dimacs_cnf/sum.hpp>
 
 #include <boost/asio.hpp>
 
@@ -15,260 +16,179 @@
 #include <vector>
 
 namespace magma_dimacs_cnf {
-    static constexpr std::int32_t sum(std::vector<std::int32_t> const &v_) noexcept {
-        std::int32_t res {0};
-        for(auto const &val: v_) {
-            ASSERT_AND_ASSUME(0 < val);
-            ASSERT_AND_ASSUME(
-              static_cast<std::int64_t>(val) + static_cast<std::int64_t>(res)
-              < static_cast<std::int64_t>(std::numeric_limits<std::int32_t>::max()));
-            res += val;
-        }
-        return res;
-    }
+    // static constexpr void
+    // create_cnf_base(input_flags const *const flags_, std::vector<std::vector<std::int32_t>>
+    // &cnf_) {
+    //     ASSERT_AND_ASSUME(cnf_.empty());
+    //
+    //     auto const n = flags_->element_count;
+    //     CREATE_VAR(n);
+    //
+    //     // For any $x$ and $y$, if $x=(yx)z$, then $z=(y(yx))y$ holds.
+    //     for(std::int32_t i = 0; i < n; i++) {  // x
+    //         for(std::int32_t j = 0; j < n; j++) {  // y
+    //             for(std::int32_t k = 0; k < n; k++) {  // z
+    //                 for(std::int32_t l = 0; l < n; l++) {  // yx
+    //                     for(std::int32_t m = 0; m < n; m++) {  // y(yx)
+    //                         cnf_.emplace_back(
+    //                           std::initializer_list {
+    //                             -var(j, i, l), -var(l, k, i), -var(j, l, m), var(m, j, k)});
+    //                     }
+    //                 }
+    //             }
+    //         }
+    //     }
+    //
+    //     // For fixed $x$ and $z$, $xy=z$ has a unique solution for $y$.
+    //     for(std::int32_t i = 0; i < n; i++) {
+    //         for(std::int32_t k = 0; k < n; k++) {
+    //             for(std::int32_t j = 0; j < n - 1; j++) {
+    //                 for(std::int32_t l = j + 1; l < n; l++) {
+    //                     cnf_.emplace_back(std::initializer_list {-var(i, j, k), -var(i, l, k)});
+    //                 }
+    //             }
+    //
+    //             std::vector<std::int32_t> cl;
+    //             cl.reserve(n);
+    //             for(std::int32_t j = 0; j < n; j++) { cl.emplace_back(var(i, j, k)); }
+    //             cnf_.emplace_back(std::move(cl));
+    //         }
+    //     }
+    //
+    //     // For any $x = yx$, it holds that $y=(xx)x$.
+    //     for(std::int32_t i = 0; i < n; i++) {  // x
+    //         for(std::int32_t j = 0; j < n; j++) {  // y
+    //             for(std::int32_t k = 0; k < n; k++) {  // xx
+    //                 cnf_.emplace_back(
+    //                   std::initializer_list {-var(j, i, i), -var(i, i, k), var(k, i, j)});
+    //             }
+    //         }
+    //     }
+    //
+    //     // For any $x$, if $x=xy$, then $(xx)x=y(xx)$ holds.
+    //     for(std::int32_t i = 0; i < n; i++) {  // x
+    //         for(std::int32_t j = 0; j < n; j++) {  // xx
+    //             for(std::int32_t k = 0; k < n; k++) {  //(xx)x
+    //                 for(std::int32_t l = 0; l < n; l++) {  // y
+    //                     cnf_.emplace_back(
+    //                       std::initializer_list {
+    //                         -var(i, i, j), -var(j, i, k), -var(i, l, i), var(l, j, k)});
+    //                 }
+    //             }
+    //         }
+    //     }
+    //
+    //     // For any $x$, if $x=xy$ and $y=xz$, then $z=y(xx)$ holds.
+    //     for(std::int32_t i = 0; i < n; i++) {  // x
+    //         for(std::int32_t j = 0; j < n; j++) {  // xx
+    //             for(std::int32_t k = 0; k < n; k++) {  // y
+    //                 for(std::int32_t l = 0; l < n; l++) {  // z
+    //                     cnf_.emplace_back(
+    //                       std::initializer_list {
+    //                         -var(i, i, j), -var(i, k, i), -var(i, l, k), var(k, j, l)});
+    //                 }
+    //             }
+    //         }
+    //     }
+    //
+    //     // For any $x$, if $x=xy$ and $x\neq xx$, then $x\neq yx$.
+    //     for(std::int32_t i = 0; i < n; i++) {  // x
+    //         for(std::int32_t j = 0; j < n; j++) {  // xx
+    //             if(i == j) { continue; }
+    //             for(std::int32_t k = 0; k < n; k++) {  // y
+    //                 cnf_.emplace_back(
+    //                   std::initializer_list {-var(i, i, j), -var(i, k, i), -var(k, i, i)});
+    //             }
+    //         }
+    //     }
+    // }
+    //
+    // static constexpr void create_cnf_first_line_constraint(
+    //   input_flags const *const flags_,
+    //   std::vector<std::int32_t> const &v_,
+    //   std::vector<std::vector<std::int32_t>> &cnf_) {
+    //     auto const n = flags_->element_count;
+    //     ASSERT_AND_ASSUME(sum(v_) == n);
+    //     CREATE_VAR(n);
+    //
+    //     std::int32_t begin = 0;
+    //     // Consider the first row, which is of the form $0x=y$.
+    //     // Each value in `v_` represents a length of each circuit.
+    //     for(auto const l: v_) {
+    //         ASSERT_AND_ASSUME(0 < l);
+    //         std::int32_t const end = begin + l;
+    //         for(std::int32_t i = begin; i < end; i++) {
+    //             cnf_.emplace_back(std::initializer_list {var(0, i, (i - begin + 1) % l +
+    //             begin)});
+    //         }
+    //         begin = end;
+    //     }
+    // }
+    //
+    // // Row `lhs_` is lexicographically less than row `rhs_`.
+    // [[maybe_unused]]
+    // static constexpr void create_cnf_lex_less(
+    //   [[maybe_unused]] input_flags const *const flags_,
+    //   [[maybe_unused]] std::vector<std::vector<std::int32_t>> &cnf_,
+    //   [[maybe_unused]] std::int32_t const lhs_,
+    //   [[maybe_unused]] std::int32_t const rhs_,
+    //   [[maybe_unused]] std::int32_t &next_) {
+    //     auto const n = flags_->element_count;
+    //     ASSERT_AND_ASSUME(0 <= lhs_);
+    //     ASSERT_AND_ASSUME(lhs_ < n);
+    //     ASSERT_AND_ASSUME(0 <= rhs_);
+    //     ASSERT_AND_ASSUME(rhs_ < n);
+    // }
+    //
+    // // The map $x\mapsto L_x$ is injective.
+    // // For distinct $x$ and $y$, $xy\neq yy$ or $x(y((yy)y))\neq y$ holds.
+    // // For distinct $x$ and $y$, $L^{-1}_y L_x y\neq y$ or $L_x L^{-1}_y y\neq y$ holds.
+    // static constexpr void create_cnf_no_equal_rows(
+    //   input_flags const *const flags_,
+    //   std::vector<std::vector<std::int32_t>> &cnf_,
+    //   std::int32_t &next_) {
+    //     auto const n = flags_->element_count;
+    //     CREATE_VAR(n);
+    //
+    //     for(std::int32_t i = 0; i < n; i++) {  // x
+    //         for(std::int32_t j = 0; j < n; j++) {  // y
+    //             if(i == j) { continue; }
+    //
+    //         }
+    //     }
+    //
+    //     // for(std::int32_t i = 0; i < n - 1; i++) {  // x
+    //     //     for(std::int32_t j = i + 1; j < n; j++) {  // y
+    //     //         std::int32_t const begin = next_;
+    //     //
+    //     //         // There exists some $z$ which $xz\neq yz$.
+    //     //         for(std::int32_t k = 0; k < n; k++) {
+    //     //             for(std::int32_t l = 0; l < n; l++) {
+    //     //                 cnf_.emplace_back(
+    //     //                   std::initializer_list {next_, -var(i, k, l), -var(j, k, l)});
+    //     //                 cnf_.emplace_back(
+    //     //                   std::initializer_list {-next_, -var(i, k, l), var(j, k, l)});
+    //     //                 cnf_.emplace_back(
+    //     //                   std::initializer_list {-next_, var(i, k, l), -var(j, k, l)});
+    //     //             }
+    //     //             next_++;
+    //     //         }
+    //     //         std::vector<std::int32_t> cl;
+    //     //         cl.reserve(n);
+    //     //         for(std::int32_t k = 0; k < n; k++) { cl.emplace_back(-begin - k); }
+    //     //         cnf_.emplace_back(std::move(cl));
+    //     //     }
+    //     // }
+    // }
 
     static constexpr void
-    create_cnf_base(input_flags const *const flags_, std::vector<std::vector<std::int32_t>> &cnf_) {
-        ASSERT_AND_ASSUME(cnf_.empty());
-
-        auto const n = flags_->element_count;
-        CREATE_VAR(n);
-
-        for(std::int32_t i = 0; i < n; i++) {
-            for(std::int32_t j = 0; j < n; j++) {
-                for(std::int32_t k = 0; k < n - 1; k++) {
-                    for(std::int32_t l = k + 1; l < n; l++) {
-                        cnf_.emplace_back(std::initializer_list {-var(i, j, k), -var(i, j, l)});
-                    }
-                }
-                std::vector<std::int32_t> cl;
-                cl.reserve(n);
-                for(std::int32_t k = 0; k < n; k++) { cl.emplace_back(var(i, j, k)); }
-                cnf_.emplace_back(std::move(cl));
+    pass_cnf(CaDiCaL::Solver &solver_, std::vector<std::vector<std::int32_t>> const &cnf_) {
+        for(auto const &cl: cnf_) {
+            for(auto const l: cl) {
+                ASSERT_AND_ASSUME(l != 0);
+                solver_.add(l);
             }
-        }
-
-        // For any $x$ and $y$, $x=y(x((yx)y))$ holds.
-        for(std::int32_t i = 0; i < n; i++) {  // x
-            for(std::int32_t j = 0; j < n; j++) {  // y
-                for(std::int32_t k = 0; k < n; k++) {  // yx
-                    for(std::int32_t l = 0; l < n; l++) {  // (yx)y
-                        for(std::int32_t m = 0; m < n; m++) {  // x((yx)y)
-                            cnf_.emplace_back(
-                              std::initializer_list {
-                                -var(j, i, k), -var(k, j, l), -var(i, l, m), var(j, m, i)});
-                        }
-                    }
-                }
-            }
-        }
-
-        // For any $x=yz$, $z=x((yx)y)$ holds.
-        for(std::int32_t i = 0; i < n; i++) {  // x
-            for(std::int32_t j = 0; j < n; j++) {  // y
-                for(std::int32_t k = 0; k < n; k++) {  // z
-                    for(std::int32_t l = 0; l < n; l++) {  // yx
-                        for(std::int32_t m = 0; m < n; m++) {  // (yx)y
-                            cnf_.emplace_back(
-                              std::initializer_list {
-                                -var(j, k, i), -var(j, i, l), -var(l, j, m), var(i, m, k)});
-                        }
-                    }
-                }
-            }
-        }
-
-        // For any $x$ and $y$, if $x=yz$ and $z=xw$, then $w=(yx)y$ holds.
-        for(std::int32_t i = 0; i < n; i++) {  // x
-            for(std::int32_t j = 0; j < n; j++) {  // y
-                for(std::int32_t k = 0; k < n; k++) {  // z
-                    for(std::int32_t l = 0; l < n; l++) {  // w
-                        for(std::int32_t m = 0; m < n; m++) {  // yx
-                            cnf_.emplace_back(
-                              std::initializer_list {
-                                -var(j, k, i), -var(i, l, k), -var(j, i, m), var(m, j, l)});
-                        }
-                    }
-                }
-            }
-        }
-
-        // For fixed $x$ and $z$, $xy=z$ has a unique solution for $y$.
-        for(std::int32_t i = 0; i < n; i++) {
-            for(std::int32_t k = 0; k < n; k++) {
-                for(std::int32_t j = 0; j < n - 1; j++) {
-                    for(std::int32_t l = j + 1; l < n; l++) {
-                        cnf_.emplace_back(std::initializer_list {-var(i, j, k), -var(i, l, k)});
-                    }
-                }
-
-                std::vector<std::int32_t> cl;
-                cl.reserve(n);
-                for(std::int32_t j = 0; j < n; j++) { cl.emplace_back(var(i, j, k)); }
-                cnf_.emplace_back(std::move(cl));
-            }
-        }
-
-        // For any $x = yx$, it holds that $y=(xx)x$.
-        for(std::int32_t i = 0; i < n; i++) {  // x
-            for(std::int32_t j = 0; j < n; j++) {  // y
-                for(std::int32_t k = 0; k < n; k++) {  // xx
-                    cnf_.emplace_back(
-                      std::initializer_list {-var(j, i, i), -var(i, i, k), var(k, i, j)});
-                }
-            }
-        }
-
-        // For any $x$, $(xx)x=(x((xx)x))(xx)$ holds.
-        for(std::int32_t i = 0; i < n; i++) {  // x
-            for(std::int32_t j = 0; j < n; j++) {  // xx
-                for(std::int32_t k = 0; k < n; k++) {  //(xx)x
-                    for(std::int32_t l = 0; l < n; l++) {  // x((xx)x)
-                        cnf_.emplace_back(
-                          std::initializer_list {
-                            -var(i, i, j), -var(j, i, k), -var(i, k, l), var(l, j, k)});
-                    }
-                }
-            }
-        }
-
-        // For any $x$, if $x=xy$, then $(xx)x=y(xx)$ holds.
-        for(std::int32_t i = 0; i < n; i++) {  // x
-            for(std::int32_t j = 0; j < n; j++) {  // xx
-                for(std::int32_t k = 0; k < n; k++) {  //(xx)x
-                    for(std::int32_t l = 0; l < n; l++) {  // y
-                        cnf_.emplace_back(
-                          std::initializer_list {
-                            -var(i, i, j), -var(j, i, k), -var(i, l, i), var(l, j, k)});
-                    }
-                }
-            }
-        }
-
-        // For any $x$, if $x=xy$ and $x\neq xx$, then $x\neq yx$.
-        for(std::int32_t i = 0; i < n; i++) {  // x
-            for(std::int32_t j = 0; j < n; j++) {  // xx
-                if(i == j) { continue; }
-                for(std::int32_t k = 0; k < n; k++) {  // y
-                    cnf_.emplace_back(
-                      std::initializer_list {-var(i, i, j), -var(i, k, i), -var(k, i, i)});
-                }
-            }
-        }
-
-        for(std::int32_t i = 0; i < n; i++) {  // x
-            for(std::int32_t j = 0; j < n; j++) {  // xx
-                // In this scope, we add `-var(i, i, j)` to represent that $x\neq xx$.
-                if(i == j) { continue; }
-                // For any $x$ which $x\neq xx$, $x\neq (xx)x$ holds.
-                cnf_.emplace_back(std::initializer_list {-var(i, i, j), -var(j, i, i)});
-                // For any $x$ which $x\neq xx$, $x\neq x(xx)$ holds.
-                cnf_.emplace_back(std::initializer_list {-var(i, i, j), -var(i, j, i)});
-                // For any $x$ which $x\neq xx$, $x\neq (xx)(xx)$ holds.
-                cnf_.emplace_back(std::initializer_list {-var(i, i, j), -var(j, j, i)});
-                // For any $x$ which $x\neq xx$, $xx\neq (xx)x$ holds.
-                cnf_.emplace_back(std::initializer_list {-var(i, i, j), -var(j, i, j)});
-                // For any $x$ which $x\neq xx$, $xx\neq x(xx)$ holds.
-                cnf_.emplace_back(std::initializer_list {-var(i, i, j), -var(i, j, j)});
-
-                for(std::int32_t k = 0; k < n; k++) {  // (xx)x
-                    // For any $x$ which $x\neq xx$, $x\neq x((xx)x)$ holds.
-                    cnf_.emplace_back(
-                      std::initializer_list {-var(i, i, j), -var(j, i, k), -var(i, k, i)});
-                    // For any $x$ which $x\neq xx$, $xx\neq x((xx)x)$ holds.
-                    cnf_.emplace_back(
-                      std::initializer_list {-var(i, i, j), -var(j, i, k), -var(i, k, j)});
-                    // For any $x$ which $x\neq xx$, $(xx)x\neq x((xx)x)$ holds.
-                    cnf_.emplace_back(
-                      std::initializer_list {-var(i, i, j), -var(j, i, k), -var(i, k, k)});
-                    // For any $x$ which $x\neq xx$, $x\neq ((xx)x)(xx)$ holds.
-                    cnf_.emplace_back(
-                      std::initializer_list {-var(i, i, j), -var(j, i, k), -var(k, j, i)});
-                    // For any $x$ which $x\neq xx$, $(xx)x\neq (xx)((xx)x)$ holds.
-                    cnf_.emplace_back(
-                      std::initializer_list {-var(i, i, j), -var(j, i, k), -var(j, k, k)});
-                }
-
-                for(std::int32_t k = 0; k < n; k++) {  // x(xx)
-                    // For any $x$ which $x\neq xx$, $x\neq x(x(xx))$ holds.
-                    cnf_.emplace_back(
-                      std::initializer_list {-var(i, i, j), -var(i, j, k), -var(i, k, i)});
-                    // For any $x$ which $x\neq xx$, $x\neq (x(xx))x$ holds.
-                    cnf_.emplace_back(
-                      std::initializer_list {-var(i, i, j), -var(i, j, k), -var(k, i, i)});
-                    // For any $x$ which $x\neq xx$, $xx\neq (x(xx))x$ holds.
-                    cnf_.emplace_back(
-                      std::initializer_list {-var(i, i, j), -var(i, j, k), -var(k, i, j)});
-                }
-            }
-        }
-    }
-
-    static constexpr void create_cnf_first_line_constraint(
-      input_flags const *const flags_,
-      std::vector<std::int32_t> const &v_,
-      std::vector<std::vector<std::int32_t>> &cnf_) {
-        auto const n = flags_->element_count;
-        ASSERT_AND_ASSUME(sum(v_) == n);
-        CREATE_VAR(n);
-
-        std::int32_t begin = 0;
-        // Consider the first row, which is of the form $0x=y$.
-        // Each value in `v_` represents a length of each circuit.
-        for(auto const l: v_) {
-            ASSERT_AND_ASSUME(0 < l);
-            std::int32_t const end = begin + l;
-            for(std::int32_t i = begin; i < end; i++) {
-                cnf_.emplace_back(std::initializer_list {var(0, i, (i - begin + 1) % l + begin)});
-            }
-            begin = end;
-        }
-    }
-
-    // Row `lhs_` is lexicographically less than row `rhs_`.
-    [[maybe_unused]]
-    static constexpr void create_cnf_lex_less(
-      [[maybe_unused]] input_flags const *const flags_,
-      [[maybe_unused]] std::vector<std::vector<std::int32_t>> &cnf_,
-      [[maybe_unused]] std::int32_t const lhs_,
-      [[maybe_unused]] std::int32_t const rhs_,
-      [[maybe_unused]] std::int32_t &next_) {
-        auto const n = flags_->element_count;
-        ASSERT_AND_ASSUME(0 <= lhs_);
-        ASSERT_AND_ASSUME(lhs_ < n);
-        ASSERT_AND_ASSUME(0 <= rhs_);
-        ASSERT_AND_ASSUME(rhs_ < n);
-    }
-
-    // The map $x\mapsto L_x$ is injective.
-    static constexpr void create_cnf_no_equal_rows(
-      input_flags const *const flags_,
-      std::vector<std::vector<std::int32_t>> &cnf_,
-      std::int32_t &next_) {
-        auto const n = flags_->element_count;
-        CREATE_VAR(n);
-
-        for(std::int32_t i = 0; i < n - 1; i++) {  // x
-            for(std::int32_t j = i + 1; j < n; j++) {  // y
-                std::int32_t const begin = next_;
-
-                // There exists some $z$ which $xz\neq yz$.
-                for(std::int32_t k = 0; k < n; k++) {
-                    for(std::int32_t l = 0; l < n; l++) {
-                        cnf_.emplace_back(
-                          std::initializer_list {next_, -var(i, k, l), -var(j, k, l)});
-                        cnf_.emplace_back(
-                          std::initializer_list {-next_, -var(i, k, l), var(j, k, l)});
-                        cnf_.emplace_back(
-                          std::initializer_list {-next_, var(i, k, l), -var(j, k, l)});
-                    }
-                    next_++;
-                }
-                std::vector<std::int32_t> cl;
-                cl.reserve(n);
-                for(std::int32_t k = 0; k < n; k++) { cl.emplace_back(-begin - k); }
-                cnf_.emplace_back(std::move(cl));
-            }
+            solver_.add(0);
         }
     }
 
@@ -308,23 +228,6 @@ namespace magma_dimacs_cnf {
         }
     }
 
-    static constexpr void
-    save_result_unknown(input_flags const *const flags_, std::vector<std::int32_t> const &v_) {
-        std::string name;
-        create_name(v_, name);
-
-        std::ofstream ofs {flags_->path / name};
-        if(!ofs) {
-            std::print(stderr, "Failed to create file.\n");
-            std::exit(1);
-        }
-
-        print_cycles(ofs, v_);
-        std::print(ofs, "\nUNKNOWN\n");
-
-        std::print(stderr, "{} end\n", v_);
-    }
-
     static constexpr void save_result_sat(
       input_flags const *const flags_,
       CaDiCaL::Solver &solver_,
@@ -352,7 +255,7 @@ namespace magma_dimacs_cnf {
       CaDiCaL::Solver &solver_,
       std::vector<std::int32_t> const &v_,
       std::vector<std::vector<std::int32_t>> const &cnf_,
-      std::int32_t const selector_base_) {
+      std::int32_t &next_) {
         ASSERT_AND_ASSUME(!v_.empty());
 
         std::string name;
@@ -365,15 +268,24 @@ namespace magma_dimacs_cnf {
         }
 
         print_cycles(ofs, v_);
-        std::print(ofs, "\nUNSAT");
+        std::print(ofs, "\nUNSAT\n");
 
-        for(std::remove_cvref_t<decltype(cnf_.size())> i = 0; i < cnf_.size(); i++) {
-            if(solver_.failed(static_cast<std::int32_t>(selector_base_ + i))) {
-                std::print(ofs, "\n{}:", i);
-                ASSERT_AND_ASSUME(i < cnf_.size());
-                for(auto const l: cnf_[i]) { std::print(ofs, " {}", l); }
-            }
+        std::print(stderr, "{} end\n", v_);
+    }
+
+    static constexpr void
+    save_result_unknown(input_flags const *const flags_, std::vector<std::int32_t> const &v_) {
+        std::string name;
+        create_name(v_, name);
+
+        std::ofstream ofs {flags_->path / name};
+        if(!ofs) {
+            std::print(stderr, "Failed to create file.\n");
+            std::exit(1);
         }
+
+        print_cycles(ofs, v_);
+        std::print(ofs, "\nUNKNOWN\n");
 
         std::print(stderr, "{} end\n", v_);
     }
@@ -382,19 +294,20 @@ namespace magma_dimacs_cnf {
       input_flags const *const flags_,
       std::vector<std::int32_t> const &v_,
       std::vector<std::vector<std::int32_t>> const &cnf_,
-      std::int32_t const next_) {
-        std::print(stderr, "{} start\n", v_);
+      std::int32_t &next_) {
+        std::string name;
+        create_name(v_, name);
+
+        if(!exists(flags_->path / "drat")) {
+            std::print(stderr, "drat directory does not exist.\n");
+            std::exit(1);
+        }
 
         CaDiCaL::Solver solver;
+        solver.trace_proof((flags_->path / "drat" / (name + ".drat")).c_str());
+        solver.resize(next_);
 
-        auto idx = next_;
-        for(auto const &v: cnf_) {
-            // solver_.assume(idx);
-            solver.add(-idx);
-            for(auto const l: v) { solver.add(l); }
-            solver.add(0);
-            idx++;
-        }
+        pass_cnf(solver, cnf_);
 
         switch(solver.simplify()) {
         case 10: {  // SAT
@@ -404,13 +317,6 @@ namespace magma_dimacs_cnf {
             save_result_unsat(flags_, solver, v_, cnf_, next_);
         } break;
         default: {  // UNKNOWN
-            idx = next_;
-            for([[maybe_unused]]
-                auto const &v: cnf_) {
-                solver.assume(idx);
-                idx++;
-            }
-
             switch(solver.solve()) {
             case 10: {  // SAT
                 save_result_sat(flags_, solver, v_);
@@ -430,41 +336,38 @@ namespace magma_dimacs_cnf {
       boost::asio::io_context &io_context_,
       input_flags const *const flags_,
       std::int32_t const n_,
-      std::vector<std::int32_t> v_) {
-        ASSERT_AND_ASSUME(0 < n_);
+      std::vector<std::int32_t> const v_) {
         ASSERT_AND_ASSUME(!v_.empty());
 
-        auto const N = flags_->element_count;
         auto const s = sum(v_);
-        ASSERT_AND_ASSUME(s <= N);
+        ASSERT_AND_ASSUME(0 < s);
 
-        auto const n = N - s;
-        if(n < n_) { return; }
+        auto const n = flags_->element_count;
+        ASSERT_AND_ASSUME(s <= n);
 
-        for(std::int32_t i = n_; i < n; i++) {
-            post(io_context_, [&io_context_, flags_, v_, i] {
-                std::vector v {v_};
-                v.push_back(i);
-                magma_solve_inner(io_context_, flags_, i, std::move(v));
-            });
+        if(s < n) {
+            for(std::int32_t i = n_; i <= n - s; i++) {
+                post(io_context_, [&io_context_, flags_, i, v_] {
+                    std::vector v {v_};
+                    v.push_back(i);
+                    magma_solve_inner(io_context_, flags_, i, std::move(v));
+                });
+            }
+            return;
         }
 
-        v_.push_back(n);
+        ASSERT_AND_ASSUME(s == n);
 
         std::vector<std::vector<std::int32_t>> cnf;
-        create_cnf_base(flags_, cnf);
-        create_cnf_first_line_constraint(flags_, v_, cnf);
-
-        std::int32_t next = 1 + N * N * N;
-        create_cnf_no_equal_rows(flags_, cnf, next);
-
+        std::int32_t next = 1 + 2 * n * n * n;
+        create_cnf(flags_, v_, cnf, next);
         solve(flags_, v_, cnf, next);
     }
 
     static constexpr void magma_solve(input_flags const &flags_) {
         boost::asio::io_context io_context;
 
-        for(std::int32_t i = 1; i < flags_.element_count; i++) {
+        for(std::int32_t i = 1; i <= flags_.element_count; i++) {
             if(i == 2 || i == 3) {
                 // There is no magma which contains 2- or 3-cycle with $0\times 0$. 2-cycle implies
                 // $0\times (0\times 0)=0$, 3-cycle implies $0\times (0\times (0\times 0)) = 0$, and
@@ -475,19 +378,6 @@ namespace magma_dimacs_cnf {
                 magma_solve_inner(io_context, &flags_, 1, std::vector {i});
             });
         }
-
-        post(io_context, [flags = &flags_, n = flags_.element_count] {
-            std::vector<std::int32_t> const v {std::initializer_list {n}};
-
-            std::vector<std::vector<std::int32_t>> cnf;
-            create_cnf_base(flags, cnf);
-            create_cnf_first_line_constraint(flags, v, cnf);
-
-            std::int32_t next = 1 + n * n * n;
-            create_cnf_no_equal_rows(flags, cnf, next);
-
-            solve(flags, v, cnf, next);
-        });
 
         std::vector<std::thread> threads;
         threads.reserve(flags_.thread_count);

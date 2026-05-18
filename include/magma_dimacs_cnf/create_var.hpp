@@ -3,6 +3,11 @@
 
 #include <cstdint>
 
+/**
+ * Creates a variable function based on three indices.
+ * `var(i, j, k)` indicates the equality $ij=k$.
+ * @param n_ Number of elements in the magma.
+ */
 #define CREATE_VAR(n_)                                                                             \
     auto const var = [n = n_](std::int32_t const i_, std::int32_t const j_, std::int32_t const k_) \
       -> std::int32_t {                                                                            \

@@ -27,9 +27,10 @@ static constexpr bool
 get_output_path(std::string_view const str_, magma_dimacs_cnf::input_flags &flags_) {
     flags_.path = std::filesystem::path {str_};
     if(!is_directory(flags_.path)) { return false; }
-    if(!std::filesystem::exists(flags_.path)) { return false; }
+    if(!exists(flags_.path)) { return false; }
     flags_.path /= std::to_string(flags_.element_count);
-    if(!std::filesystem::exists(flags_.path)) { std::filesystem::create_directory(flags_.path); }
+    if(!exists(flags_.path)) { std::filesystem::create_directory(flags_.path); }
+    if(!exists(flags_.path / "drat")) { std::filesystem::create_directory(flags_.path / "drat"); }
     return true;
 }
 

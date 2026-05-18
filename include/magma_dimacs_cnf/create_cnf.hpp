@@ -206,6 +206,23 @@ namespace magma_dimacs_cnf {
                 cnf_.emplace_back(std::initializer_list {-inv_var(i, i, j), -inv_var(i, j, j)});
             }
         }
+
+        // For any distinct $x$ and $y$, $yx\neq xx$ or $y(x*x)\neq x$ holds.
+        for(std::int32_t i = 0; i < n; i++) {  // x
+            for(std::int32_t j = 0; j < n; j++) {  // y
+                if(i == j) { continue; }
+                for(std::int32_t k = 0; k < n; k++) {
+                    for(std::int32_t l = 0; l < n; l++) {
+                        cnf_.emplace_back(
+                          std::initializer_list {
+                            -var(i, i, k), -var(j, i, k), -var(i, l, i), -var(j, l, i)});
+                        cnf_.emplace_back(
+                          std::initializer_list {
+                            -inv_var(k, i, i), -inv_var(k, j, i), -inv_var(i, i, l), -inv_var(i, j, l)});
+                    }
+                }
+            }
+        }
     }
 
     static constexpr void create_cnf_677_idempotent_properties(
@@ -280,8 +297,8 @@ namespace magma_dimacs_cnf {
       [[maybe_unused]] std::int32_t &next_) {
         auto const n = flags_->element_count;
         ASSERT_AND_ASSUME(0 < n);
-        CREATE_VAR(n);
-        CREATE_INV_VAR(n);
+        // CREATE_VAR(n);
+        // CREATE_INV_VAR(n);
 
         create_cnf_677_general_properties(flags_, cnf_, next_);
         create_cnf_677_idempotent_properties(flags_, cnf_, next_);
@@ -305,6 +322,22 @@ namespace magma_dimacs_cnf {
                 cnf_.emplace_back(std::initializer_list {var(0, i, (i - begin + 1) % l + begin)});
             }
             begin = end;
+        }
+
+        if(1 != v_[0]) {
+            for(std::int32_t i = 1; i < n; i++) {
+                cnf_.emplace_back(std::initializer_list {-var(i, i, i)});
+                for(std::int32_t j = 0; j < n; j++) {
+                    if(i == j) { continue; }
+                    cnf_.emplace_back(std::initializer_list {-var(i, i, j), -var(i, j, i)});
+                    for(std::int32_t k = 0; k < n; k++) {
+                        if(i == k) { continue; }
+                        if(j == k) { continue; }
+                        cnf_.emplace_back(
+                          std::initializer_list {-var(i, i, j), -var(i, j, k), -var(i, k, i)});
+                    }
+                }
+            }
         }
     }
 

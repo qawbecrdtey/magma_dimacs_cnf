@@ -2,8 +2,8 @@
 #define MAGMA_DIMACS_CNF_MAGMA_SOLVE_HPP
 
 #include <magma_dimacs_cnf/assert_and_assume.hpp>
-#include <magma_dimacs_cnf/input_flags.hpp>
 #include <magma_dimacs_cnf/create_cnf.hpp>
+#include <magma_dimacs_cnf/input_flags.hpp>
 #include <magma_dimacs_cnf/sum.hpp>
 
 #include <boost/asio.hpp>
@@ -252,10 +252,10 @@ namespace magma_dimacs_cnf {
 
     static constexpr void save_result_unsat(
       input_flags const *const flags_,
-      CaDiCaL::Solver &solver_,
+      [[maybe_unused]] CaDiCaL::Solver &solver_,
       std::vector<std::int32_t> const &v_,
-      std::vector<std::vector<std::int32_t>> const &cnf_,
-      std::int32_t &next_) {
+      [[maybe_unused]] std::vector<std::vector<std::int32_t>> const &cnf_,
+      [[maybe_unused]] std::int32_t &next_) {
         ASSERT_AND_ASSUME(!v_.empty());
 
         std::string name;

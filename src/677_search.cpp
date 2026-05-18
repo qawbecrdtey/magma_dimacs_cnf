@@ -9,7 +9,7 @@
 #include <thread>
 
 static constexpr std::int32_t lo = 5;
-static constexpr std::int32_t hi = 1'000;
+static constexpr std::int32_t hi = 70;
 
 static constexpr void print_help(char const *const argv0_) {
     std::print(

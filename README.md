@@ -13,7 +13,7 @@ $ make
 $ ./677_search [/path/to/result] [N] [T] 
 ```
 
-Replace `N` with any number between 5 and 1000, and `T` with the number of threads.
+Replace `N` with any number between 5 and 70, and `T` with the number of threads.
 
 ## Contribute
 
